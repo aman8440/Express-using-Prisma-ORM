@@ -2,13 +2,22 @@ import { Request, Response } from 'express';
 import * as userService from '../services/user.service';
 import { commonResponse } from '../utils/common-response';
 import { HTTP_STATUS } from '../constants/status-codes';
+import { formatToTimezone } from '../utils/date-formatter';
 
 export const getUsers = async (req: Request, res: Response) => {
+  const timeZone = req.headers['x-timezone'] as string || 'UTC';
+
   try {
      const users = await userService.getAllUsers();
+
+     const formattedUsers = users.map((user: any) => ({
+      ...user,
+      createdAt: formatToTimezone(user.createdAt, timeZone),
+      updatedAt: formatToTimezone(user.updatedAt, timeZone),
+     }))
     return res
       .status(HTTP_STATUS.OK)
-      .json(commonResponse(true, 'Users fetched successfully', users));
+      .json(commonResponse(true, 'Users fetched successfully', formattedUsers));
   } catch (error: any) {
     return res
       .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
